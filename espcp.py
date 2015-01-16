@@ -26,7 +26,68 @@
 #--
 #-- The above license is known as the Simplified BSD license.
 
-if __name__ == "__main__":
+import sys
+import serial
+from time import sleep
+import argparse
 
-    print("espcp")
+version="0.1.0"
+
+cpcommand = """l = file.list();
+for k,v in pairs(l) do
+   print("name:"..k..", size:"..v)
+end
+"""
+
+def send_line(port, textline):
+
+    port.write(textline)
+    port.write('\n')
+    
+    rcv = port.readline()
+
+    print("Sent    >>" + repr(textline))
+    print("Received<<" + repr(rcv))
+    print
+    
+    return rcv
+   
+if __name__ == '__main__':
+
+    # parse arguments or use defaults
+    parser = argparse.ArgumentParser(description='ESP8266 Lua script uploader.')
+    parser.add_argument('-p', '--port',    default='/dev/ttyUSB0', help='Device name, default /dev/ttyUSB0')
+    parser.add_argument('-b', '--baud',    default=9600,           help='Baudrate, default 9600')
+    parser.add_argument('-f', '--src',     default='main.lua',     help='Source file on computer')
+    parser.add_argument('-t', '--dest',    default='main.lua',     help='Destination file on MCU')
+    parser.add_argument('-r', '--restart', action='store_true',    help='Restart MCU after copy')
+    parser.add_argument('-d', '--dofile',  action='store_true',    help='Run the Lua script after upload')
+    parser.add_argument('-v', '--verbose', action='store_true',    help="Show progress messages.")
+    args = parser.parse_args()
+
+    # open serial port
+    try:
+        port = serial.Serial(args.port, args.baud)
+    except:
+        sys.stderr.write("Could not open port %s\n" % (args.port))
+        sys.exit(1)
+
+    # Check that we have a module attached
+    send_line(port,'')
+
+    # open source file for reading
+    try:
+        f = open(args.src,"rt")
+    except:
+        sys.stderr.write("Could not open input file \"%s\"\n" % args.src)
+        sys.exit(1)
+
+    send_line(port, "file.open(\"%s\", \"a+\")" % args.dest)
+    for l in f.readlines():
+        
+        l = l.strip()
+        
+        send_line(port, "file.write('%s')" % l)
+
+    send_line(port, "file.close()")
     
