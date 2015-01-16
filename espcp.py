@@ -52,6 +52,12 @@ def send_line(port, textline):
     
     return rcv
    
+def escape_string(textstring):
+    
+    s = textstring.replace('\'','\\\'')
+    
+    return s
+   
 if __name__ == '__main__':
 
     # parse arguments or use defaults
@@ -87,7 +93,7 @@ if __name__ == '__main__':
         
         l = l.strip()
         
-        send_line(port, "file.write('%s')" % l)
+        send_line(port, "file.write('%s\n')" % escape_string(l))
 
     send_line(port, "file.close()")
     
