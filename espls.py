@@ -77,7 +77,8 @@ if __name__ == '__main__':
     
     for l in lscommand.split('\n'):
 
-        print(send_line(port,l))
+        send_line(port,l)
         
-        
+    rcv = port.readline()
+    print rcv
 

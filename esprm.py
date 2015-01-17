@@ -26,7 +26,48 @@
 #--
 #-- The above license is known as the Simplified BSD license.
 
-if __name__ == "__main__":
+import sys
+import serial
+from time import sleep
+import argparse
 
-    print("esprm")
+version="0.1.0"
+
+def send_line(port, textline):
+
+    port.write(textline)
+    port.write('\n')
     
+    rcv = port.readline()
+
+    #print("Sent    >>" + repr(textline))
+    #print("Received<<" + repr(rcv))
+    #print
+    
+    return rcv
+   
+if __name__ == '__main__':
+
+    # parse arguments or use defaults
+    parser = argparse.ArgumentParser(description='ESP8266 Lua script uploader.')
+    parser.add_argument('-p', '--port',    default='/dev/ttyUSB0', help='Device name, default /dev/ttyUSB0')
+    parser.add_argument('-b', '--baud',    default=9600,           help='Baudrate, default 9600')
+    parser.add_argument('-f', '--src',     default='main.lua',     help='Source file on computer, default main.lua')
+    parser.add_argument('-r', '--restart', action='store_true',    help='Restart MCU after upload')
+    parser.add_argument('-d', '--dofile',  action='store_true',    help='Run the Lua script after upload')
+    parser.add_argument('-v', '--verbose', action='store_true',    help="Show progress messages.")
+    args = parser.parse_args()
+
+    # open serial port
+    try:
+        port = serial.Serial(args.port, args.baud)
+    except:
+        sys.stderr.write("Could not open port %s\n" % (args.port))
+        sys.exit(1)
+
+    # clear the line
+    send_line(port,'')
+    
+    send_line(port, "file.remove(\"%s\")" % args.src)
+       
+

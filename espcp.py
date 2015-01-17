@@ -54,7 +54,7 @@ def send_line(port, textline):
    
 def escape_string(textstring):
     
-    s = textstring.replace('\'','\\\'')
+    s = textstring.replace("\'","\\\'")
     
     return s
    
