@@ -79,19 +79,23 @@ if __name__ == '__main__':
     # clear the line
     send_line(port,'')
     
+    check_file_list = True
     for l in lscommand.split('\n'):
 
-        send_line(port,l)
+        rcv = send_line(port,l)
         
-    rcv = port.readline().strip()
-    while not rcv.startswith("Files:"):
+        if rcv.startswith("Files:0"):
+            check_file_list = False
         
-        if (len(rcv) != 0) and (not rcv.startswith('>')):
-
-            print("Received<<" + repr(rcv))
-
-            # print rcv
-            
+    if check_file_list:
+        
         rcv = port.readline().strip()
+        while not rcv.startswith("Files:"):
+            
+            if (len(rcv) != 0) and (not rcv.startswith('>')):
 
-    print rcv
+                print("Received<<" + repr(rcv))
+
+            rcv = port.readline().strip()
+
+        print rcv
