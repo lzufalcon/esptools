@@ -33,10 +33,13 @@ import argparse
 
 version="0.1.0"
 
-lscommand = """l = file.list();
+lscommand = """c = 0
+l = file.list();
 for k,v in pairs(l) do
    print("name:"..k..", size:"..v)
+   c = c + 1
 end
+print("Files:"..c)
 """
 
 def send_line(port, textline):
@@ -47,7 +50,8 @@ def send_line(port, textline):
     rcv = port.readline()
 
     #print("Sent    >>" + repr(textline))
-    #print("Received<<" + repr(rcv))
+    if not rcv.startswith('>'):
+        print("Received<<" + repr(rcv))
     #print
     
     return rcv
@@ -79,6 +83,15 @@ if __name__ == '__main__':
 
         send_line(port,l)
         
-    rcv = port.readline()
-    print rcv
+    rcv = port.readline().strip()
+    while not rcv.startswith("Files:"):
+        
+        if (len(rcv) != 0) and (not rcv.startswith('>')):
 
+            print("Received<<" + repr(rcv))
+
+            # print rcv
+            
+        rcv = port.readline().strip()
+
+    print rcv

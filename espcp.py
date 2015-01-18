@@ -26,7 +26,7 @@
 #--
 #-- The above license is known as the Simplified BSD license.
 
-import sys
+import sys, os
 import serial
 from time import sleep
 import argparse
@@ -39,16 +39,22 @@ for k,v in pairs(l) do
 end
 """
 
+trace_serial = False
+
 def send_line(port, textline):
+
+    global trace_serial
 
     port.write(textline)
     port.write('\n')
     
     rcv = port.readline()
 
-    print("Sent    >>" + repr(textline))
-    print("Received<<" + repr(rcv))
-    print
+    sleep(0.15)
+    
+    if trace_serial:
+        print("Sent    >>" + repr(textline))
+        print("Received<<" + repr(rcv))
     
     return rcv
    
@@ -65,12 +71,16 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port',    default='/dev/ttyUSB0', help='Device name, default /dev/ttyUSB0')
     parser.add_argument('-b', '--baud',    default=9600,           help='Baudrate, default 9600')
     parser.add_argument('-f', '--src',     default='main.lua',     help='Source file on computer')
-    parser.add_argument('-t', '--dest',    default='main.lua',     help='Destination file on MCU')
+    parser.add_argument('-n', '--name',    default='',             help='Destination filename on MCU')
+    parser.add_argument('-t', '--trace',   default='store_true',   help='copy serial traffic to trace file')
     parser.add_argument('-r', '--restart', action='store_true',    help='Restart MCU after copy')
     parser.add_argument('-d', '--dofile',  action='store_true',    help='Run the Lua script after upload')
     parser.add_argument('-v', '--verbose', action='store_true',    help="Show progress messages.")
     args = parser.parse_args()
 
+    # Store logging debug level
+    trace_serial = args.trace
+    
     # open serial port
     try:
         port = serial.Serial(args.port, args.baud)
@@ -84,11 +94,17 @@ if __name__ == '__main__':
     # open source file for reading
     try:
         f = open(args.src,"rt")
+        
     except:
         sys.stderr.write("Could not open input file \"%s\"\n" % args.src)
         sys.exit(1)
 
-    send_line(port, "file.open(\"%s\", \"a+\")" % args.dest)
+    # correct the filename or use the default
+    if args.name == '':
+        args.name = os.path.basename(args.src)
+        print "Filename is %s" % args.name
+
+    send_line(port, "file.open(\"%s\", \"a+\")" % args.name)
     for l in f.readlines():
         
         l = l.strip()
