@@ -39,6 +39,7 @@ for k,v in pairs(l) do
 end
 """
 
+
 trace_serial = False
 
 def send_line(port, textline):
@@ -66,6 +67,8 @@ def escape_string(textstring):
    
 if __name__ == '__main__':
 
+    CHUNKSIZE = 60
+    
     # parse arguments or use defaults
     parser = argparse.ArgumentParser(description='ESP8266 Lua script uploader.')
     parser.add_argument('-p', '--port',    default='/dev/ttyUSB0', help='Device name, default /dev/ttyUSB0')
@@ -93,23 +96,47 @@ if __name__ == '__main__':
 
     # open source file for reading
     try:
-        f = open(args.src,"rt")
+        f = open(args.src,"rb")
         
-    except:
-        sys.stderr.write("Could not open input file \"%s\"\n" % args.src)
+        # correct the filename or use the default
+        if args.name == '':
+            args.name = os.path.basename(args.src)
+            print "Filename is %s" % args.name
+
+        send_line(port, "file.open(\"%s\", \"wb\")" % args.name)
+        
+        try:
+            bytes_read = f.read(CHUNKSIZE)
+            while bytes_read:
+                
+                l = ""
+                for b in bytes_read:
+                    if (b in string.printable) and (ord(b) >=32):
+                        l += b
+                    elif (b == '\''):
+                        l += '\\\''
+                    elif (b == '\\'):
+                        l += '\\\\'
+                    elif (b == '\n'):
+                        l += '\\n'
+                    elif (b == '\r'):
+                        l += '\\r'
+                    else:
+                        l += '\\x' + str(b).encode("hex")
+                    
+                send_line(port, "file.write('%s')" % escape_string(l))
+                    
+                bytes_read = f.read(CHUNKSIZE)
+        finally:
+            f.close()
+            
+    except Exception, err:
+        sys.stderr.write('ERROR: %s\n' % str(err))
         sys.exit(1)
 
-    # correct the filename or use the default
-    if args.name == '':
-        args.name = os.path.basename(args.src)
-        print "Filename is %s" % args.name
-
-    send_line(port, "file.open(\"%s\", \"a+\")" % args.name)
     for l in f.readlines():
         
         l = l.strip()
-        
-        send_line(port, "file.write('%s\n')" % escape_string(l))
 
     send_line(port, "file.close()")
     
