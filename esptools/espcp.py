@@ -30,6 +30,7 @@ import sys, os
 import serial
 from time import sleep
 import argparse
+import string
 
 version="0.1.0"
 
@@ -38,7 +39,6 @@ for k,v in pairs(l) do
    print("name:"..k..", size:"..v)
 end
 """
-
 
 trace_serial = False
 
@@ -103,12 +103,13 @@ if __name__ == '__main__':
             args.name = os.path.basename(args.src)
             print "Filename is %s" % args.name
 
-        send_line(port, "file.open(\"%s\", \"wb\")" % args.name)
-        
         try:
+
+            send_line(port, "file.open(\"%s\", \"w+\")" % args.name)
+
             bytes_read = f.read(CHUNKSIZE)
             while bytes_read:
-                
+
                 l = ""
                 for b in bytes_read:
                     if (b in string.printable) and (ord(b) >=32):
@@ -127,6 +128,9 @@ if __name__ == '__main__':
                 send_line(port, "file.write('%s')" % escape_string(l))
                     
                 bytes_read = f.read(CHUNKSIZE)
+
+            send_line(port, "file.close()")
+
         finally:
             f.close()
             
@@ -134,9 +138,3 @@ if __name__ == '__main__':
         sys.stderr.write('ERROR: %s\n' % str(err))
         sys.exit(1)
 
-    for l in f.readlines():
-        
-        l = l.strip()
-
-    send_line(port, "file.close()")
-    
